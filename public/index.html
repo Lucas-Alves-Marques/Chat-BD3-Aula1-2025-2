@@ -27,6 +27,7 @@
 
             <div class="messages"></div>
 
+
         </form>
 
     </div>
@@ -39,20 +40,75 @@
 
         const socket = io('http://localhost:3000')
 
+        //Função de de renderização de mensagem no navegador
+
+        function renderMessage(message){
+
+            $(".messages").append('<div class="message"><strong>' + 
+                                    message.data_hora + ' '+
+                                    message.author + ': ' +
+                                    '</strong>' +
+                                    message.message 
+
+                                )
+        }
+
+        //Recupera as mensagens amteropres de todos usuarios e exibe no navegador
+
+        socket.on('previousMessage', function(messages){
+
+            for(message of messages){
+
+                renderMessage(message)
+            }
+
+        })
+
+        //Renderiza novas mensagens enviadas por outros usuarios
+
+        socket.on('receivedMessage', function(message){
+
+            renderMessage(message)
+
+        })
+
         //Captura os dados de usúario e de mensagens do usúario
 
-        $('#chat').submit(function(e){
+        $('#chat').submit(function (e) {
 
             e.preventDefault()
             // alert('Fununcia')
 
             //Recupera os dados de usuário e mensagem:
 
-            let user = $('input[name=username]').val();
-            let message = $('input[name=message]').val();
+            var user = $('input[name=username]').val();
+            var message = $('input[name=message]').val();
 
             console.log('Usuário: ' + user);
             console.log('Mensagem: ' + message);
+
+            //Data e hora de envio de mensagem
+
+            let data_hora_obj = new Date();
+
+            let data_hora_msg = `[ ${data_hora_obj.getDate()}/${data_hora_obj.getMonth()}/${data_hora_obj.getFullYear()} - 
+                                   ${data_hora_obj.getHours()}:${data_hora_obj.getMinutes()}:${data_hora_obj.getSeconds()}]`
+
+            // Criação do objeto JSON da mensagem
+
+            var messageObjetc = {
+
+                data_hora : data_hora_msg,
+                author: user,
+                message : message
+            }
+
+            renderMessage(messageObjetc)
+
+                socket.emit('sendMessage', messageObjetc);
+
+            console.log('JSON: ' + JSON.stringify(messageObjetc))
+
 
         });
 

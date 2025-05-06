@@ -47,7 +47,12 @@ io.on('connection', socketResp =>{
 
         socketResp.broadcast.emit('receivedMessage', data)
 
+        console.log('QTD. Mesagens: ' + messages.length)
+
+
     })
+
+    console.log('QTD. Mesagens: ' + messages.length)
 
 })
 
