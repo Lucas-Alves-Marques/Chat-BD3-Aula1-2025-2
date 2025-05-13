@@ -3,6 +3,8 @@ const http = require('http');
 const socket = require('socket.io')
 const ejs = require('ejs');
 const path = require('path');
+const mongoose = require('mongoose');
+const { error } = require('console');
 
 const app = express();
 const server = http.createServer(app);
@@ -21,16 +23,44 @@ app.use('/', (req, res) => {
 
 })
 
+function connectDB() {
+
+    let dbURL = 'mongodb+srv://lucasmarquesalv24:STQDr5T5GYmLfU5U@cluster0.g0lya.mongodb.net/';
+
+    mongoose.connect(dbURL);
+
+    mongoose.connection.on('error', console.error.bind(console, 'connection error: '))
+
+    mongoose.connection.once('open', function () {
+
+        console.log('Atlas MongoDB conectado com sucesso')
+    })
+}
+
+connectDB();
+
+let Message = mongoose.model('Message', {usuario:String, data_hora:String, message:String   })
+
 // logica do Socket.IO - envio e propagação de mensagens
 
 //Array que simula o banco de dados:
 
 let messages = []
 
+Message.find({})
+    .then(docs => {
+
+        messages = docs
+
+    }).catch(error => {
+
+        console.log(error)
+    })
+
 // Estrutura de Conexão do Socket.IO
 
-io.on('connection', socketResp =>{
-    
+io.on('connection', socketResp => {
+
     console.log('Novo Usúario Conectado: ' + socketResp.id)
 
     //Recupera e mantém (exibe) as mensagens entre o front e o back
@@ -39,13 +69,26 @@ io.on('connection', socketResp =>{
 
     //Lógica de chat quando uma mensagem é enviada
 
-    socketResp.on('sendMessage', data =>{
+    socketResp.on('sendMessage', data => {
 
         //Adiciona a mensagem no final do array de messagens
 
-        messages.push(data);
+        // messages.push(data);
 
-        socketResp.broadcast.emit('receivedMessage', data)
+        let message = new Message(data)
+
+        message.save()
+            .then(
+
+                socketResp.broadcast.emit('receivedMessage', data)
+
+            )
+            .catch(error => {
+
+                console.log(error)
+            })
+
+
 
         console.log('QTD. Mesagens: ' + messages.length)
 
@@ -56,4 +99,4 @@ io.on('connection', socketResp =>{
 
 })
 
-server.listen(3000, ()=>{console.log('Está tudo online em - http://localhost:3000')});
+server.listen(3000, () => { console.log('Está tudo online em - http://localhost:3000') });
